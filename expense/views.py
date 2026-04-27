@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Expense
+from .models import Expense, Category
 from django.db.models import Sum
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from .expense.form import ExpenseForm
 from django.contrib.auth.decorators import login_required
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from .models import Budget
 
 
@@ -69,16 +69,16 @@ def signup(request):
 @login_required
 def add_expense(request):
     if request.method == 'POST':
-        form = ExpenseForm(request.POST)
+        form = ExpenseForm(request.POST, user = request.user)
         if form.is_valid():
             expense = form.save(commit=False)
             expense.user = request.user
             expense.save()
-
             return redirect('dashboard')
     else:
             form = ExpenseForm()
     return render(request, 'expenses/add_expense.html', {'form': form})
+
 
 
 @login_required
@@ -96,7 +96,6 @@ def update_expense(request, pk):
 
 
 
-
 @login_required
 def delete_expense(request, pk):
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
@@ -106,3 +105,47 @@ def delete_expense(request, pk):
          return redirect('dashboard')
     return render(request, 'expenses/delete_expense.html', {'expense': expense})
 
+
+@login_required
+def add_category(request):
+    if request.method == "POST":
+          name = request.POST.get('name')
+          if name:
+               Category.objects.create(
+                    name = name,
+                    user = request.user
+               )
+               return redirect('manage_category')
+    category = Category.objects.filter(user=request.user)
+    return render(request, 'epenses/add_category.html', {'category': category})
+
+
+@login_required
+def expense(request):
+     now = datetime.now()
+     expense = Expense.objects.filter(
+          user = request.user,
+          date__month = now.month,
+          date__year = now.year
+                                      ).order_by('-date')
+     
+     total_spent = expense.aggregate(Sum('amount'))['amount__sum'] or 0
+     number_of_expense = expense.count()
+     
+     budget = Budget.objects.filter(user= request.user, month= now.month, year = now.year).first()
+    
+     if budget:
+        budget_amount = budget.amount
+     else:
+        budget_amount = 0  # Default value if no budget is set
+
+     print("budget", budget)
+     context = {
+          "expenses" : expense,
+          "budget_amount" : budget_amount,
+          "Total_spent" : total_spent,
+          "Number_of_expense" : number_of_expense,
+          "Current_month": now.strftime('%B %Y'),
+     }
+
+     return render(request, 'expenses/expense.html', {"expense_data" : context})
