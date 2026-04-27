@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpentWise | Personal Finance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc; /* Very light slate gray */
+            color: #0f172a;
+        }
+        .soft-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .nav-link {
+            position: relative;
+            color: #64748b;
+            transition: color 0.2s;
+        }
+        .nav-link:hover {
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+            <div class="flex items-center gap-8">
+                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">
+                    Spent<span class="text-blue-600">Wise.</span>
+                </h1>
+                
+                <div class="hidden md:flex space-x-6">
+                    <a href="{% url 'dashboard' %}" class="nav-link font-medium">Dashboard</a>
+                    <a href="#" class="nav-link font-medium">History</a>
+                    <a href="#" class="nav-link font-medium">Budgets</a>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                {% if user.is_authenticated %}
+                    <span class="text-sm text-slate-500 mr-2">Hello, <b>{{ user.username }}</b></span>
+                    <a href="{% url 'add_expense' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-lg shadow-blue-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Add Expense
+                    </a>
+                    <form action="{% url 'logout' %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-slate-400 hover:text-red-500 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-slate-600 font-medium px-4">Login</a>
+                    <a href="{% url 'signup' %}" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-semibold">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-10">
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>

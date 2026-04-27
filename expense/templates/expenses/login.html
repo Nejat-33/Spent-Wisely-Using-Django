@@ -1,0 +1,28 @@
+{% extends 'expenses/base.html' %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-[70vh]">
+    <div class="glass p-8 rounded-3xl w-full max-w-md shadow-2xl">
+        <h2 class="text-3xl font-bold mb-6 text-center">Welcome Back</h2>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Username</label>
+                <input type="text" name="username" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Password</label>
+                <input type="password" name="password" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-xl font-bold transition mt-4">
+                Login to SpentWise
+            </button>
+        </form>
+        
+        <p class="text-center mt-6 text-gray-400 text-sm">
+             New here? <a href="{% url 'signup' %}" class="text-blue-400 hover:underline">Create an account</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

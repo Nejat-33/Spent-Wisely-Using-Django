@@ -1,0 +1,56 @@
+{% extends 'expenses/base.html' %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-[70vh]">
+    <div class="glass p-8 rounded-3xl w-full max-w-md shadow-2xl">
+        <h2 class="text-3xl font-bold mb-6 text-center">Join SpentWise</h2>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">{{ field.label }}</label>
+                    <div class="text-white">
+                        {{ field }}
+                    </div>
+                    {% if field.errors %}
+                        <p class="text-red-400 text-xs mt-1">{{ field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-xl font-bold transition mt-4">
+                Create Account
+            </button>
+        </form>
+        
+        <p class="text-center mt-6 text-gray-400 text-sm">
+            Already have an account? <a href="{% url 'login' %}" class="text-blue-400 hover:underline">Login here</a>
+        </p>
+    </div>
+</div>
+
+<style>
+    /* This ensures the Django form inputs match our Tailwind style */
+    input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        color: white;
+        transition: border-color 0.2s;
+    }
+    input:focus {
+        outline: none;
+        border-color: #3b82f6;
+    }
+    .helptext {
+        display: block;
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
