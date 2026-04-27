@@ -6,25 +6,45 @@ from django.contrib.auth import login
 from .expense.form import ExpenseForm
 from django.contrib.auth.decorators import login_required
 import json
+from datetime import datetime
+from .models import Budget
 
 
+
+@login_required
 def dashboard(request):
-    expense = Expense.objects.filter(user=request.user)
 
+    expense = Expense.objects.filter(user=request.user)
     total_sppent = expense.aggregate(Sum('amount'))['amount__sum'] or 0
 
+    now = datetime.now()
     category = (
-         expense.values('category_name').annotate(total_sum= Sum('amount')).order_by('-total')
+         expense.values('category').annotate(total_sum= Sum('amount')).order_by('-total_sum')
     )
+    budget_obj = Budget.objects.filter(
+         user = request.user,
+         month = now.month,
+         year = now.year
+    ).first()
 
-    labels = [ item['category_name'] for item in category ]
-    data = [float(item['total']) for item in category]
+    budget_amount = budget_obj.amount if budget_obj else 0
+
+    if budget_amount > 0:
+         budget_percent = (total_sppent/ budget_amount) * 100
+    else: 
+         budget_percent = 0
+
+    labels = [ item['category'] for item in category ]
+    data = [float(item['total_sum']) for item in category]
 
     context = {
         "expenses" : expense,
         "total_spent": total_sppent,
         "labels": json.dumps(labels),
-        "data": json.dumps(data)
+        "data": json.dumps(data),
+        "budget_percent" : budget_percent,
+        "budget_amount": min(budget_percent, 100),
+        "is_over_budget" : total_sppent > budget_amount and budget_amount > 0
     }
 
     return render(request, 'expenses/dashboard.html', context)
@@ -43,6 +63,8 @@ def signup(request):
         form = UserCreationForm()
     
     return render(request, 'expenses/signup.html', {'form': form})
+
+
 
 @login_required
 def add_expense(request):
@@ -70,7 +92,9 @@ def update_expense(request, pk):
             return redirect('dashboard')
     else:
             form = ExpenseForm(instance=expense)
-    return render(request, 'expense/edit_expense.html', {'form': form})
+    return render(request, 'expenses/edit_expense.html', {'form': form})
+
+
 
 
 @login_required
@@ -82,4 +106,3 @@ def delete_expense(request, pk):
          return redirect('dashboard')
     return render(request, 'expenses/delete_expense.html', {'expense': expense})
 
-         

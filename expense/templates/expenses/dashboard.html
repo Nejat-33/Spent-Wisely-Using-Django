@@ -30,19 +30,46 @@
                     <option>Monthly</option>
                 </select>
             </div>
-            <div class="h-32 flex items-end justify-between gap-3 mt-4">
-                <div class="bg-slate-100 w-full h-1/2 rounded-xl hover:bg-blue-100 transition-colors"></div>
-                <div class="bg-slate-100 w-full h-3/4 rounded-xl hover:bg-blue-100 transition-colors"></div>
-                <div class="bg-slate-100 w-full h-2/3 rounded-xl hover:bg-blue-100 transition-colors"></div>
-                <div class="bg-slate-100 w-full h-full rounded-xl hover:bg-blue-100 transition-colors"></div>
-                <div class="bg-blue-500 w-full h-4/5 rounded-xl"></div>
-                <div class="bg-slate-100 w-full h-1/3 rounded-xl hover:bg-blue-100 transition-colors"></div>
-            </div>
+           
+    <div class="h-64">
+        <canvas id="categoryChart"></canvas>
+    </div>
+</div>
         </div>
     </div>
 
+    <div class="soft-card p-8 rounded-3xl my-8">
+    <div class="flex justify-between items-end mb-4">
+        <div>
+            <p class="text-slate-500 font-medium">Monthly Budget Status</p>
+            <h4 class="text-xl font-bold text-slate-900">
+                {% if budget_amount > 0 %}
+                    ${{ total_spent }} of ${{ budget_amount }}
+                {% else %}
+                    No budget set for this month.
+                {% endif %}
+            </h4>
+        </div>
+        <span class="text-sm font-bold {% if is_over_budget %}text-red-500{% else %}text-blue-600{% endif %}">
+            {{ budget_percent|floatformat:0 }}%
+        </span>
+    </div>
+
+    <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+        <!-- <div class="h-full transition-all duration-500 rounded-full {% if is_over_budget %}bg-red-500 shadow-lg shadow-red-100{% else %}bg-blue-600 shadow-lg shadow-blue-100{% endif %}"
+             style="width: {{ budget_percent }}%">
+        </div> -->
+    </div>
+    
+    {% if is_over_budget %}
+        <p class="text-red-500 text-xs mt-3 font-semibold flex items-center gap-1">
+            ⚠️ You have exceeded your monthly limit!
+        </p>
+    {% endif %}
+</div>
+
     <div>
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center my-7">
             <h3 class="text-xl font-bold text-slate-900">Recent Transactions</h3>
             <a href="#" class="text-blue-600 text-sm font-semibold hover:underline">View All</a>
         </div>
@@ -99,4 +126,42 @@
         </div>
     </div>
 </div>
+{{ labels|json_script:"labels-data" }}
+{{ data|json_script:"values-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Ensure data exists before running
+const rawLabels = JSON.parse(document.getElementById('labels-data').textContent);
+    const rawData = JSON.parse(document.getElementById('values-data').textContent);
+
+    if (rawLabels.length > 0) {
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: rawLabels,
+                datasets: [{
+                    label: 'Spent',
+                    data: rawData,
+                    backgroundColor: '#2563eb',
+                    borderRadius: 10,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    } else {
+        // Optional: show a message if no data exists
+        document.getElementById('categoryChart').parentElement.innerHTML = 
+            '<p class="text-slate-400 text-center mt-10">Add an expense to see your chart!</p>';
+    }
+</script>
+
 {% endblock %}
