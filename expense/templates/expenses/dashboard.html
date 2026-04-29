@@ -44,14 +44,14 @@
             <p class="text-slate-500 font-medium">Monthly Budget Status</p>
             <h4 class="text-xl font-bold text-slate-900">
                 {% if budget_amount > 0 %}
-                    ${{ total_spent }} of ${{ budget_amount }}
+                    ${{ total_spent }} of ${{ budget_amount|floatformat:2 }}
                 {% else %}
                     No budget set for this month.
                 {% endif %}
             </h4>
         </div>
         <span class="text-sm font-bold {% if is_over_budget %}text-red-500{% else %}text-blue-600{% endif %}">
-            {{ budget_percent|floatformat:0 }}%
+            {{ budget_percent|floatformat }}%
         </span>
     </div>
 

@@ -1,0 +1,116 @@
+{% extends 'expenses/base.html' %}
+
+{% block content %}
+<!-- <div class="max-w-4xl mx-auto py-10">
+    <div class="mb-8">
+        <h2 class="text-3xl font-extrabold text-slate-900">Manage Categories</h2>
+        <p class="text-slate-500">Organize your spending by creating custom categories.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="soft-card p-6 rounded-[2rem] bg-white border border-slate-100 h-fit">
+            <h3 class="text-lg font-bold mb-4">New Category</h3>
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <input type="text" name="name" placeholder="e.g. Subscriptions" 
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl font-bold transition shadow-lg shadow-blue-100">
+                    Add Category
+                </button>
+            </form>
+        </div>
+
+        <div class="md:col-span-2 soft-card p-6 rounded-[2rem] bg-white border border-slate-100">
+            <h3 class="text-lg font-bold mb-4">Your Categories</h3>
+            <div class="flex flex-wrap gap-3">
+                {% for category in categories %}
+                    <div class="group flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl hover:border-blue-300 transition">
+                        <span class="font-medium text-slate-700">{{ category.name }}</span>
+                        </div>
+                {% empty %}
+                    <p class="text-slate-400 text-sm italic">No categories yet. Add your first one!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div> -->
+
+
+
+
+
+
+<div class="max-w-5xl mx-auto py-10 px-4">
+    <div class="mb-10">
+        <h2 class="text-3xl font-black text-slate-900">Categories</h2>
+        <p class="text-slate-500">Organize your spending with custom labels.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        
+        <div class="lg:col-span-1">
+            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 sticky top-10">
+                <h3 class="text-lg font-bold text-slate-900 mb-6">Create New</h3>
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Category Name</label>
+                        <input type="text" name="name" required placeholder="e.g. Groceries, Rent..." 
+                            class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 mt-2 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95">
+                        Add Category
+                    </button>
+                </form>
+            </div>
+        </div>
+
+       
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-slate-50/50 border-b border-slate-100">
+                            <th class="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
+                            <th class="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        {% for cat in categories %}
+                        <tr class="group hover:bg-slate-50/50 transition-colors">
+                            <td class="p-6">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold mr-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                        {{ cat.name|slice:":1"|upper }}
+                                    </div>
+                                    <span class="font-bold text-slate-700 text-lg">{{ cat.name }}</span>
+                                </div>
+                            </td>
+                            <td class="p-6">
+                                <div class="flex justify-center gap-2">
+                                    <form action="" method="POST" onsubmit="return confirm('Deleting this category will affect linked expenses. Continue?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="p-20 text-center text-slate-400 italic">
+                                No categories created yet. Add your first one to the left!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %} 
