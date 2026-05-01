@@ -13,7 +13,7 @@ from .models import Budget
 
 @login_required
 def dashboard(request):
-
+    now = datetime.now()
     expense = Expense.objects.filter(user=request.user)
     total_sppent = expense.aggregate(Sum('amount'))['amount__sum'] or 0
 
@@ -21,6 +21,12 @@ def dashboard(request):
     category = (
          expense.values('category').annotate(total_sum= Sum('amount')).order_by('-total_sum')
     )
+    category2 = (
+         expense.values('category__name').annotate(total_sum= Sum('amount')).order_by('-total_sum')
+    )
+
+    highest_category = category2.first()
+ 
     budget_obj = Budget.objects.filter(
          user = request.user,
          month = now.month,
@@ -28,6 +34,7 @@ def dashboard(request):
     ).first()
 
     budget_amount = budget_obj.amount if budget_obj else 0
+    remaining_amount =  budget_amount - total_sppent
 
     if budget_amount > 0:
          budget_percent = (total_sppent/ budget_amount) * 100
@@ -43,7 +50,11 @@ def dashboard(request):
         "labels": json.dumps(labels),
         "data": json.dumps(data),
         "budget_percent" : budget_percent,
-        "budget_amount": min(budget_percent, 100),
+        "current_month" : now.strftime('%B %Y'),
+        "remaining_amount" : remaining_amount,
+        "budget_amount": budget_amount,
+        "highest_category_name" : highest_category['category__name'],
+        "highest_category_total_sum" : highest_category['total_sum'],
         "is_over_budget" : total_sppent > budget_amount and budget_amount > 0
     }
 
@@ -145,9 +156,7 @@ def expense(request):
 
      expense = Expense.objects.filter(
           user = request.user).order_by('-date')
-     print(f"DEBUG: Found {expense.count()} total expenses for user {request.user}") # CHECK TERMINAL
-    
-     
+   
      category = Category.objects.filter(user = request.user)
 
      if period == "today":
@@ -167,7 +176,7 @@ def expense(request):
      ) 
  
      total_spent = expense.aggregate(Sum('amount'))['amount__sum'] or 0
-     print(f"DEBUG: Total spent is {total_spent}") 
+
      number_of_expense = expense.count()
     
      budget = Budget.objects.filter(user= request.user, month= now.month, year = now.year).first()

@@ -2,122 +2,159 @@
 
 {% block content %}
 <div class="space-y-8">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-            <h2 class="text-3xl font-bold text-slate-900">Dashboard</h2>
-            <p class="text-slate-400 font-bold mt-2">Track your spending and stay on budget.</p>
+            <h2 class="text-4xl font-black tracking-tight text-slate-900">Dashboard</h2>
+            <div class="flex items-center gap-2 mt-2">
+                <span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-xs font-black tracking-wider uppercase">
+                    {{ current_month }}
+                </span>
+                <p class="text-slate-400 font-bold">Track your financial ecosystem.</p>
+            </div>
         </div>
         <div class="flex gap-3">
-            <button class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl font-medium hover:bg-slate-50 transition">Export CSV</button>
-            <a href="{% url 'add_expense' %}" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-blue-700 transition shadow-lg shadow-blue-100">+ New Expense</a>
+            <button class="bg-white border border-slate-200 text-slate-700 px-5 py-3 rounded-2xl font-bold text-sm hover:bg-slate-50 transition shadow-sm">
+                Export CSV
+            </button>
+            <a href="{% url 'add_expense' %}" class="bg-slate-900 text-white px-5 py-3 rounded-2xl font-bold text-sm hover:bg-slate-800 transition shadow-xl shadow-slate-900/10 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                New Expense
+            </a>
         </div>
     </div>
 
-    <div class="grid grid-cols-1  md:grid-cols-3 gap-6">
-        <div class="soft-card p-8 rounded-3xl bg-gradient-to-br flex flex-col items-center justify-center from-blue-600 to-blue-700 text-white border-none shadow-xl shadow-blue-200">
-            <p class="text-blue-100 text-xl font-bold mb-4 uppercase tracking-wider">Total Spending</p>
-            <h2 class="text-5xl font-extrabold mt-2">  ${{ total_spent }}</h2>
-            <div class="mt-6 flex items-center gap-2 text-blue-100 text-sm">
-                <span class="bg-blue-500/30 px-2 py-1 rounded-lg">↑ 12% from last month</span>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="p-8 rounded-[2.5rem] bg-gradient-to-br from-blue-600 to-indigo-700 text-white border-none shadow-xl shadow-blue-500/20 relative overflow-hidden group">
+            <div class="absolute -bottom-12 -right-12 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/15 transition-all"></div>
+            <p class="text-blue-200 text-xs font-black tracking-widest uppercase mb-2">Total Spending</p>
+            <h2 class="text-4xl font-black tracking-tight mt-1 mb-4">${{ total_spent|default:0.00 }}</h2>
+            <p class="text-lg font-black tracking-tight mt-1 mb-4">{{ budget_percent|default:0|floatformat:2 }}% Used</p>
+
+            <span class="absolute right-10 top-3 text-sm font-black  bg-white/20 backdrop-blur-md text-indigo-600 font-blacktext-xs px-3 py-2 rounded-2xl inline-flex items-center gap-1">
+
+                <span class=" {% if is_over_budget %} text-red-500 {% else %} text-white {% endif %}">
+                            {% if is_over_budget %}Exceeded limit!{% else %}Within budget{% endif %}
+                        </span>
+            </span>
+            <p class="inline-flex items-center gap-1 text-xs bg-white/20 px-3 py-1 rounded-full backdrop-blur-md">
+                ↑ Accumulative this period
+            </p>
+        </div>
+
+        <div class="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col justify-between">
+            <div>
+                <p class="text-slate-400 text-xs font-black tracking-widest uppercase mb-2">Monthly Budget</p>
+                <h3 class="text-2xl font-black text-slate-900">
+                    ${{ budget_amount|default:0.00|floatformat:2 }}
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">Total limit allocated</p>
+            </div>
+            
+            <div class="mt-6">
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div class="h-full {% if is_over_budget %}bg-red-500{% else %}bg-blue-600{% endif %} rounded-full transition-all duration-500"
+                         style="width: '{{ budget_percent|default:0 }}%'"></div>
+                </div>
+                <div class="flex justify-between items-center mt-3 text-[11px] font-black tracking-widest text-slate-400 capitalize">
+                    <span>Remaining Amount <span class="text-sm text-slate-800" >${{ remaining_amount }}</span> </span>
+                    <span class="{% if is_over_budget %}text-red-500 font-bold{% else %}text-slate-700{% endif %}">
+                        {% if is_over_budget %}Exceeded limit!{% else %}Within budget{% endif %}
+                    </span>
+                </div>
             </div>
         </div>
 
-        <div class="soft-card p-8 rounded-3xl col-span-1 md:col-span-2 flex flex-col justify-between">
-            <div class="flex justify-between items-center">
-                <p class="text-slate-500 font-medium">Spending Overview</p>
-                <select class="text-xs bg-slate-100 border-none rounded-lg p-1 text-slate-600 outline-none">
-                    <option>Last 7 Days</option>
-                    <option>Monthly</option>
-                </select>
+        <div class="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col justify-between">
+            <div>
+                <p class="text-slate-400 text-xs font-black tracking-widest uppercase mb-2">Highest Category</p>
+                <h3 class="text-2xl font-black text-slate-900 capitalize">
+                    {{ highest_category_name |default:"No expense" }} , ${{ highest_category_total_sum }}
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">Most spent category this month</p>
             </div>
-           
-    <div class="h-60">
-        <canvas id="categoryChart"></canvas>
-    </div>
-</div>
+            <div class="mt-6">
+                <span class="bg-indigo-50 text-indigo-600 border border-indigo-100/30 font-bold text-xs px-3 py-2 rounded-xl inline-flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    <span>Peak performance</span>
+                </span>
+            </div>
         </div>
     </div>
 
-    <div class="soft-card p-8 rounded-3xl my-8">
-    <div class="flex justify-between items-end mb-4">
-        <div>
-            <p class="text-slate-500 font-medium">Monthly Budget Status</p>
-            <h4 class="text-xl font-bold text-slate-900">
-                {% if budget_amount > 0 %}
-                    ${{ total_spent }} of ${{ budget_amount|floatformat:2 }}
-                {% else %}
-                    No budget set for this month.
-                {% endif %}
-            </h4>
+    <div class="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/40">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h4 class="text-lg font-black text-slate-900 tracking-tight">Spending Analytics</h4>
+                <p class="text-slate-400 text-xs font-bold mt-0.5">Visualize your cash flow by category.</p>
+            </div>
+            <select class="text-xs font-bold bg-slate-50 border border-slate-200 rounded-2xl py-2 px-3 text-slate-600 focus:outline-none focus:border-blue-500">
+                <option>Bar Chart</option>
+            </select>
         </div>
-        <span class="text-sm font-bold {% if is_over_budget %}text-red-500{% else %}text-blue-600{% endif %}">
-            {{ budget_percent|floatformat }}%
-        </span>
-    </div>
-
-    <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
-        <div class="h-full transition-all duration-500 rounded-full {% if is_over_budget %}bg-red-500 shadow-lg shadow-red-100{% else %}bg-blue-600 shadow-lg shadow-blue-100{% endif %}"
-             style="width: '{{ budget_percent }}%'">
+        <div class="h-72">
+            <canvas id="categoryChart"></canvas>
         </div>
     </div>
-    
-    {% if is_over_budget %}
-        <p class="text-red-500 text-xs mt-3 font-semibold flex items-center gap-1">
-            ⚠️ You have exceeded your monthly limit!
-        </p>
-    {% endif %}
-</div>
 
     <div>
-        <div class="flex justify-between items-center my-7">
-            <h3 class="text-xl font-bold text-slate-900">Recent Transactions</h3>
-            <a href="#" class="text-blue-600 text-sm font-semibold hover:underline">View All</a>
+        <div class="flex justify-between items-center my-6">
+            <div>
+                <h3 class="text-xl font-black text-slate-900 tracking-tight">Recent Transactions</h3>
+                <p class="text-slate-400 text-xs font-bold mt-0.5">Your latest financial activity log.</p>
+            </div>
+            <a href="{% url 'expense' %}" class="text-slate-900 text-xs font-black bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition">
+                View All
+            </a>
         </div>
         
-        <div class="soft-card rounded-3xl overflow-hidden">
+        <div class="rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/30 overflow-hidden">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50/50 border-b border-slate-100">
-                        <th class="p-5 text-sm font-semibold text-slate-600 uppercase tracking-wider">Title</th>
-                        <th class="p-5 text-sm font-semibold text-slate-600 uppercase tracking-wider">Category</th>
-                        <th class="p-5 text-sm font-semibold text-slate-600 uppercase tracking-wider text-right">Amount</th>
-                        <th class="p-5 text-sm font-semibold text-slate-600 uppercase tracking-wider text-center">Actions</th>
+                        <th class="p-6 text-xs font-black text-slate-400 uppercase tracking-widest">Title</th>
+                        <th class="p-6 text-xs font-black text-slate-400 uppercase tracking-widest">Category</th>
+                        <th class="p-6 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
+                        <th class="p-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-slate-50">
                     {% for expense in expenses %}
-                    <tr class="hover:bg-slate-50/80 transition-colors group">
-                        <td class="p-5">
-                            <p class="font-semibold text-slate-900 capitalize">{{ expense.title }}</p>
-                            <p class="text-xs text-slate-400 ">{{ expense.date }}</p>
+                    <tr class="hover:bg-slate-50/60 transition-colors group">
+                        <td class="p-6">
+                            <p class="font-black text-slate-900 capitalize text-sm">{{ expense.title }}</p>
+                            <p class="text-[10px] text-slate-400 font-medium mt-0.5">{{ expense.date }}</p>
                         </td>
-                        <td class="p-5">
-                            <span class="bg-slate-100 text-slate-600 px-3 py-1 capitalize rounded-full text-xs font-bold">
+                        <td class="p-6">
+                            <span class="bg-blue-50/80 text-blue-600 border border-blue-100/50 px-3 py-1 capitalize rounded-full text-xs font-black">
                                 {{ expense.category }}
                             </span>
                         </td>
-                        <td class="p-5 text-right font-bold text-slate-900">
+                        <td class="p-6 text-right font-black text-slate-900 text-sm">
                             ${{ expense.amount }}
                         </td>
-                        <td class="p-5">
-                            <div class="flex justify-center gap-4  transition-opacity">
-                                <a href="{% url 'edit_expense' expense.pk %}" class="text-slate-400 hover:text-blue-600 transition">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </a>
-                                <a href="{% url 'delete_expense' expense.pk %}" class="text-slate-400 hover:text-red-500 transition">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </a>
+                        <td class="p-6">
+                            <div class="flex justify-center gap-4 items-center">
+                                <a href="{% url 'expense_detail' expense.pk %}" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View Detail">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <!-- Eye Icon -->
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+</a>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="p-10 text-center text-slate-400">
-                            No expenses found. Start by adding one!
+                        <td colspan="4" class="p-20 text-center text-slate-400 font-medium">
+                            <div class="flex flex-col items-center">
+                                <span class="text-3xl mb-2">📭</span>
+                                No expenses found. Start by recording your first transaction!
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -126,13 +163,13 @@
         </div>
     </div>
 </div>
+
 {{ labels|json_script:"labels-data" }}
 {{ data|json_script:"values-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-
-const rawLabels = JSON.parse(document.getElementById('labels-data').textContent);
+    const rawLabels = JSON.parse(document.getElementById('labels-data').textContent);
     const rawData = JSON.parse(document.getElementById('values-data').textContent);
 
     if (rawLabels.length > 0) {
@@ -144,24 +181,49 @@ const rawLabels = JSON.parse(document.getElementById('labels-data').textContent)
                 datasets: [{
                     label: 'Spent',
                     data: rawData,
-                    backgroundColor: '#2563eb',
-                    borderRadius: 10,
+                    backgroundColor: '#1e293b',
+                    borderRadius: 16,
+                    barThickness: 32,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true, grid: { display: false } },
-                    x: { grid: { display: false } }
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { 
+                            color: '#f1f5f9' 
+                        },
+                        ticks: {
+                            font: {
+                                weight: 'bold',
+                                size: 10
+                            }
+                        }
+                    },
+                    x: { 
+                        grid: { 
+                            display: false 
+                        },
+                        ticks: {
+                            font: {
+                                weight: 'bold',
+                                size: 10
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 }
             }
         });
     } else {
-        
         document.getElementById('categoryChart').parentElement.innerHTML = 
-            '<p class="text-slate-400 text-center mt-10">Add an expense to see your chart!</p>';
+            '<p class="text-slate-400 text-center text-sm font-bold mt-20">Add an expense to see your spending insights chart!</p>';
     }
 </script>
-
 {% endblock %}
