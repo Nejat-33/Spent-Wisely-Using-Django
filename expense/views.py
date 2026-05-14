@@ -8,6 +8,10 @@ from django.contrib.auth.decorators import login_required
 import json
 from datetime import datetime, timedelta
 from .models import Budget
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from .ml.pridictor import CategoryPredictor
 
 
 
@@ -53,8 +57,8 @@ def dashboard(request):
         "current_month" : now.strftime('%B %Y'),
         "remaining_amount" : remaining_amount,
         "budget_amount": budget_amount,
-        "highest_category_name" : highest_category['category__name'],
-        "highest_category_total_sum" : highest_category['total_sum'],
+     # #    "highest_category_name" : highest_category['category__name'],
+     #    "highest_category_total_sum" : highest_category['total_sum'],
         "is_over_budget" : total_sppent > budget_amount and budget_amount > 0
     }
 
@@ -131,6 +135,8 @@ def manage_categories(request):
         'categories': categories
     })
 
+
+
 @login_required
 def add_category(request):
     if request.method == "POST":
@@ -200,8 +206,8 @@ def expense(request):
           if remaining_percent < 25:
                critical_alert = True
      
-     
-    
+
+
      context = {
           "expenses" : expense,
           "categories": category,
@@ -219,6 +225,8 @@ def expense(request):
 
      print ("expenses: ", context)
      return render(request, 'expenses/expense.html', {"expense_data" : context})
+
+
 
 @login_required
 def set_budget(request):
@@ -239,11 +247,28 @@ def set_budget(request):
                                                      "year": now.year})
 
 
-from django.shortcuts import render, get_object_or_404
-from .models import Expense
+
 
 @login_required
 def expense_detail(request, id):
     expense = get_object_or_404(Expense, id=id, user=request.user)
     
     return render(request, 'expenses/expense_detail.html', {'expense': expense})
+
+
+@login_required        
+@require_POST
+def predict_category(request):
+    try:
+        body = json.loads(request.body)
+        description = body.get("description", "").strip()
+
+        if len(description) < 3:
+            return JsonResponse({"category": None, "confidence": 0}, status=200)
+
+        predictor = CategoryPredictor()   
+        result = predictor.predict(description)
+        return JsonResponse(result)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

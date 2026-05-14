@@ -2,55 +2,72 @@
 
 {% block content %}
 <div class="flex justify-center items-center min-h-[70vh]">
-    <div class="glass p-8 rounded-3xl w-full max-w-md shadow-2xl">
-        <h2 class="text-3xl font-bold mb-6 text-center">Join SpentWise</h2>
+    <div class="soft-card p-10 rounded-[2.5rem] w-full max-w-md bg-white shadow-xl shadow-slate-200/60 border border-slate-100">
+        <h2 class="text-3xl font-extrabold mb-2 text-center text-slate-900">Join SpentWise</h2>
+        <p class="text-slate-500 text-sm text-center mb-8">Start tracking and predicting your expenses today.</p>
         
-        <form method="post" class="space-y-4">
+        <form method="post" class="space-y-5">
             {% csrf_token %}
             
             {% for field in form %}
                 <div>
-                    <label class="block text-sm text-gray-400 mb-1">{{ field.label }}</label>
-                    <div class="text-white">
+                    <label class="block text-sm font-bold text-slate-700 mb-2 ml-1">
+                        {{ field.label }}
+                    </label>
+                    
+                    <div class="relative">
                         {{ field }}
                     </div>
+                    
+                    <!-- {% if field.help_text %}
+                        <small class="block text-slate-400 text-[11px] leading-relaxed mt-1.5 ml-1 max-w-sm">
+                            {{ field.help_text|safe }}
+                        </small>
+                    {% endif %} -->
+
                     {% if field.errors %}
-                        <p class="text-red-400 text-xs mt-1">{{ field.errors.0 }}</p>
+                        <p class="text-red-500 text-xs mt-2 font-medium ml-1">
+                            {{ field.errors.0 }}
+                        </p>
                     {% endif %}
                 </div>
             {% endfor %}
 
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-xl font-bold transition mt-4">
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-200 mt-6">
                 Create Account
             </button>
         </form>
         
-        <p class="text-center mt-6 text-gray-400 text-sm">
-            Already have an account? <a href="{% url 'login' %}" class="text-blue-400 hover:underline">Login here</a>
+        <p class="text-center mt-8 text-slate-500 text-sm font-medium">
+            Already have an account? <a href="{% url 'login' %}" class="text-blue-600 hover:text-blue-700 font-bold transition">Login here</a>
         </p>
     </div>
 </div>
 
 <style>
-    /* This ensures the Django form inputs match our Tailwind style */
+    /* Overrides the old dark glass styling with your clean light interface theme */
     input {
         width: 100%;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 0.75rem;
-        padding: 0.75rem;
-        color: white;
-        transition: border-color 0.2s;
+        background-color: #f8fafc !important; /* slate-50 */
+        border: 1px solid #e2e8f0 !important; /* slate-200 */
+        border-radius: 1rem !important; /* rounded-2xl */
+        padding: 0.875rem 1rem !important;
+        color: #0f172a !important; /* slate-900 text is now clearly visible! */
+        font-size: 1rem;
+        transition: all 0.2s;
     }
     input:focus {
-        outline: none;
-        border-color: #3b82f6;
+        outline: none !important;
+        border-color: #3b82f6 !important; /* blue-500 */
+        background-color: #ffffff !important;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
     }
-    .helptext {
-        display: block;
-        font-size: 0.75rem;
-        color: #9ca3af;
-        margin-top: 0.25rem;
+    
+    /* Clean up Django's built-in list styles for password rules if they render as lists */
+    ul.helptext, .helptext ul {
+        list-style-type: none !important;
+        padding-left: 0 !important;
+        margin: 4px 0 0 0 !important;
     }
 </style>
 {% endblock %}

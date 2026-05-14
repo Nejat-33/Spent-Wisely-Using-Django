@@ -3,13 +3,14 @@
 {% block content %}
 <div class="max-w-xl mx-auto py-8">
     <a href="{% url 'dashboard' %}" class="flex items-center text-slate-500 hover:text-slate-900 font-bold transition group">
-                <span class="bg-white p-2 rounded-lg shadow-sm border border-slate-200 mr-3 group-hover:scale-110 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                </span>
-                Back
-            </a>
+        <span class="bg-white p-2 rounded-lg shadow-sm border border-slate-200 mr-3 group-hover:scale-110 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        </span>
+        Back
+    </a>
+
     <div class="mb-8 text-center">
         <h2 class="text-3xl font-extrabold text-slate-900">Add New Expense</h2>
         <p class="text-slate-500 mt-2">Enter the details of your transaction below.</p>
@@ -19,7 +20,66 @@
         <form method="post" class="space-y-6">
             {% csrf_token %}
 
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2 ml-1">
+                    {{ form.description.label }}
+                </label>
+                <div class="relative">
+                    {{ form.description }}
+                </div>
+
+                
+                <div class="mt-2 ml-1">
+                    <span
+                        id="category-suggestion"
+                        style="display:none; cursor:pointer; background:#e0f2fe; color:#0369a1;
+                               padding:4px 12px; border-radius:8px; font-size:13px; font-weight:600;"
+                        class="hover:bg-sky-200 transition-colors"
+                    ></span>
+                    <small id="suggestion-hint" style="display:none;"
+                           class="block text-slate-400 text-xs mt-1">
+                        Click the suggestion to auto-fill category
+                    </small>
+                </div>
+
+                {% if form.description.errors %}
+                    <p class="text-red-500 text-xs mt-2 font-medium ml-1">
+                        {{ form.description.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2 ml-1">
+                    {{ form.category.label }}
+                </label>
+                <div class="relative">
+                    {{ form.category }}
+                </div>
+                {% if form.category.errors %}
+                    <p class="text-red-500 text-xs mt-2 font-medium ml-1">
+                        {{ form.category.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
+         
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2 ml-1">
+                    {{ form.amount.label }}
+                </label>
+                <div class="relative">
+                    {{ form.amount }}
+                </div>
+                {% if form.amount.errors %}
+                    <p class="text-red-500 text-xs mt-2 font-medium ml-1">
+                        {{ form.amount.errors.0 }}
+                    </p>
+                {% endif %}
+            </div>
+
             {% for field in form %}
+                {% if field.name != 'description' and field.name != 'category' and field.name != 'amount' %}
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-2 ml-1">
                         {{ field.label }}
@@ -33,17 +93,18 @@
                         </p>
                     {% endif %}
                 </div>
+                {% endif %}
             {% endfor %}
 
             <div class="grid grid-cols-2 gap-4 pt-6">
-                <button type="submit" 
+                <button type="submit"
                     class="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-200 flex justify-center items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                     Save
                 </button>
-                <a href="{% url 'dashboard' %}" 
+                <a href="{% url 'dashboard' %}"
                     class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-4 rounded-2xl font-bold text-center transition-all">
                     Cancel
                 </a>
@@ -53,25 +114,113 @@
 </div>
 
 <style>
-    /* Since Django renders {{ field }} as a raw input, 
-       this CSS ensures the fields look modern even without 
-       editing forms.py widgets every time.
-    */
     input, select, textarea {
         width: 100%;
-        background-color: #f8fafc !important; /* slate-50 */
-        border: 1px solid #e2e8f0 !important; /* slate-200 */
-        border-radius: 1rem !important; /* rounded-2xl */
+        background-color: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 1rem !important;
         padding: 0.875rem 1rem !important;
-        color: #0f172a !important; /* slate-900 */
+        color: #0f172a !important;
         font-size: 1rem;
         transition: all 0.2s;
     }
     input:focus, select:focus, textarea:focus {
         outline: none !important;
-        border-color: #3b82f6 !important; /* blue-500 */
+        border-color: #3b82f6 !important;
         background-color: #ffffff !important;
         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
     }
 </style>
+
+<script>
+    const descriptionInput = document.getElementById("id_description");
+    const categorySelect   = document.getElementById("id_category");
+    const suggestionBadge  = document.getElementById("category-suggestion");
+    const suggestionHint   = document.getElementById("suggestion-hint");
+
+    console.log("Description Input Found:", descriptionInput);
+    console.log("Category Select Found:", categorySelect);  
+
+    let debounceTimer = null;
+
+    async function fetchCategorySuggestion(description) {
+        if (description.length < 3) {
+            suggestionBadge.style.display = "none";
+            suggestionHint.style.display  = "none";
+            return;
+        }
+
+        try {
+            const res = await fetch("/predict-category/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify({ description }),
+            });
+
+            const data = await res.json();
+
+            if (data.category && data.confidence > 0.15) {
+                suggestionBadge.textContent = `✦ ${data.category} — ${Math.round(data.confidence * 100)}% match`;
+                suggestionBadge.style.display = "inline-block";
+                suggestionHint.style.display  = "block";
+                suggestionBadge.dataset.category = data.category;
+            } else {
+                suggestionBadge.style.display = "none";
+                suggestionHint.style.display  = "none";
+            }
+        } catch (error) {
+            console.error("Prediction failed:", error);
+        }
+    }
+
+    if (descriptionInput) {
+        descriptionInput.addEventListener("input", (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                fetchCategorySuggestion(e.target.value.trim());
+            }, 400);
+        });
+    }
+
+  if (suggestionBadge) {
+    suggestionBadge.addEventListener("click", () => {
+        const suggestedName = suggestionBadge.dataset.category; // e.g., "Food & Dining"
+        
+        if (suggestedName && categorySelect) {
+            const cleanSuggestion = suggestedName.trim().toLowerCase();
+            let foundMatch = false;
+
+            // Loop through every single option inside the dropdown
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                const option = categorySelect.options[i];
+                const optionText = option.text.trim().toLowerCase();
+                const optionValue = option.value.trim().toLowerCase();
+
+                // Check if the suggestion matches the visible text OR the underlying value
+                if (optionText === cleanSuggestion || optionValue === cleanSuggestion) {
+                    categorySelect.selectedIndex = i; // Select by its position index!
+                    foundMatch = true;
+                    break;
+                }
+            }
+
+            // Hide the badge if we successfully made a choice
+            if (foundMatch) {
+                // Force the browser to recognize the UI change
+                categorySelect.dispatchEvent(new Event('change'));
+                
+                suggestionBadge.style.display = "none";
+                if (suggestionHint) suggestionHint.style.display = "none";
+            } else {
+                console.error(`Could not find a dropdown option matching: "${suggestedName}"`);
+                alert(`ML suggested "${suggestedName}", but it doesn't match any option in your dropdown template.`);
+            }
+        }
+    });
+}
+
+</script>
 {% endblock %}
