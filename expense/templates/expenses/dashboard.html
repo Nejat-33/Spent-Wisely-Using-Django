@@ -85,7 +85,51 @@
         </div>
     </div>
 
-    <div class="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/40">
+   <div class="bg-white/60 backdrop-blur-md border border-slate-100 rounded-2xl p-6 shadow-sm">
+    
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h3 class="text-lg font-bold text-slate-800 tracking-tight">Weekly Spending Trend</h3>
+            <p class="text-xs text-slate-400">Actual vs predicted spend this month.</p>
+        </div>
+        <span id="trend-badge" class="px-3 py-1 rounded-full text-xs font-bold transition-all duration-300" style="display: none;"></span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+        
+        <div class="lg:col-span-2 relative h-64 w-full">
+            <canvas id="weeklyTrendChart"></canvas>
+        </div>
+
+        <div class="lg:col-span-1 flex flex-col justify-between h-full bg-slate-50/80 border border-slate-200/60 rounded-xl p-5 relative overflow-hidden group hover:border-sky-300 transition-all duration-300">
+            
+            <div class="absolute -top-10 -right-10 w-24 h-24 bg-sky-400/10 rounded-full blur-xl pointer-events-none"></div>
+            
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+                    </span>
+                    <span class="text-[11px] font-bold text-sky-600 tracking-wider uppercase">NovaCore AI Forecast</span>
+                </div>
+
+                <p id="trend-message" class="text-sm text-slate-600 leading-relaxed min-h-[60px]">
+                    Analyzing your spending habits...
+                </p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100">
+                <small id="suggestion-hint" class="block text-slate-400 text-[11px] leading-tight">
+                    💡 Smart projections scale dynamically based on your weekly transactional velocity.
+                </small>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+    <!-- <div class="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/40">
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h4 class="text-lg font-black text-slate-900 tracking-tight">Spending Analytics</h4>
@@ -98,7 +142,7 @@
         <div class="h-72">
             <canvas id="categoryChart"></canvas>
         </div>
-    </div>
+    </div> -->
 
     <div>
         <div class="flex justify-between items-center my-6">
@@ -163,12 +207,12 @@
         </div>
     </div>
 </div>
-
+<!--
 {{ labels|json_script:"labels-data" }}
 {{ data|json_script:"values-data" }}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
+ <script>
     const rawLabels = JSON.parse(document.getElementById('labels-data').textContent);
     const rawData = JSON.parse(document.getElementById('values-data').textContent);
 
@@ -225,5 +269,131 @@
         document.getElementById('categoryChart').parentElement.innerHTML = 
             '<p class="text-slate-400 text-center text-sm font-bold mt-20">Add an expense to see your spending insights chart!</p>';
     }
+</script> -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function loadWeeklyTrend() {
+    try {
+        const res = await fetch("{% url 'weekly_prediction' %}?t=" + new Date().getTime());
+const data = await res.json();
+
+        const badge   = document.getElementById("trend-badge");
+        const message = document.getElementById("trend-message");
+        const canvas  = document.getElementById("weeklyTrendChart");
+
+        message.textContent = data.message;
+
+        if (data.message) {
+    // Converts **text** into <strong>text</strong> dynamically
+    message.innerHTML = data.message.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-800">$1</strong>');
+} else {
+    message.textContent = "";
+}   if (!data.actual || data.actual.length < 2) {
+            canvas.parentElement.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full">
+                    <p class="text-slate-400 text-sm font-medium">${data.message}</p>
+                </div>`;
+            badge.style.display = "none";
+            return;
+        }
+
+        const badgeMap = {
+            increasing: "background:#fee2e2; color:#dc2626;",
+            decreasing: "background:#dcfce7; color:#16a34a;",
+            stable:     "background:#eff6ff; color:#3b82f6;",
+        };
+        badge.style.cssText = badgeMap[data.trend] || badgeMap.stable;
+        badge.textContent = data.trend.charAt(0).toUpperCase() + data.trend.slice(1);
+
+        const actualLabels    = data.actual.map(w => w.week);
+        const predictedLabels = data.predicted.map(w => w.week);
+        const allLabels       = [...new Set([...actualLabels, ...predictedLabels])];
+        allLabels.sort((a, b) => {
+    const numA = parseInt(a.replace(/^\D+/g, '')) || 0;
+    const numB = parseInt(b.replace(/^\D+/g, '')) || 0;
+    return numA - numB;
+});
+
+        const actualAmounts = allLabels.map(label => {
+            const found = data.actual.find(w => w.week === label);
+            return found ? parseFloat(found.amount) : null;
+        });
+
+        const predictedAmounts = allLabels.map(label => {
+            const found = data.predicted.find(w => w.week === label);
+            return found ? parseFloat(found.amount) : null;
+        });
+
+        const ctx = canvas.getContext("2d");
+
+        const existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: allLabels,
+                datasets: [
+                    {
+                        label: "Actual",
+                        data: actualAmounts,
+                        backgroundColor: "#1e293b",   
+                        borderRadius: 10,
+                        barThickness: 28,
+                    },
+                    {
+                        label: "Predicted",
+                        data: predictedAmounts,
+                        backgroundColor: "#bae6fd",
+                        borderRadius: 10,
+                        barThickness: 28,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "#f1f5f9" },
+                        ticks: {
+                            font: { weight: "bold", size: 10 },
+                            callback: val => "$" + val.toLocaleString(),
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { weight: "bold", size: 10 } }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "bottom",
+                        labels: {
+                            font: { weight: "bold", size: 11 },
+                            color: "#94a3b8",
+                            boxWidth: 12,
+                            borderRadius: 4,
+                            padding: 16,
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` $${ctx.parsed.y.toLocaleString()}`
+                        }
+                    }
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error("Weekly trend failed:", err);
+    }
+}
+
+loadWeeklyTrend();
 </script>
 {% endblock %}

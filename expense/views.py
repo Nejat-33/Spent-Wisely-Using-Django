@@ -8,11 +8,10 @@ from django.contrib.auth.decorators import login_required
 import json
 from datetime import datetime, timedelta
 from .models import Budget
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from .ml.pridictor import CategoryPredictor
-
+from .ml.spending_predictor import get_weekly_spending
 
 
 @login_required
@@ -163,7 +162,7 @@ def expense(request):
      expense = Expense.objects.filter(
           user = request.user).order_by('-date')
    
-     category = Category.objects.filter(user = request.user)
+     category = Category.objects.all()
 
      if period == "today":
           expense = expense.filter(date = now.date())
@@ -272,3 +271,15 @@ def predict_category(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+    
+
+
+@login_required
+def weekly_spending_prediction(request):
+    if request.user.is_anonymous:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        request.user = User.objects.first() 
+        
+    data = get_weekly_spending(request.user)
+    return JsonResponse(data, safe=False)
