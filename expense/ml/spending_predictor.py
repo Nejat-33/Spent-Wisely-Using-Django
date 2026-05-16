@@ -1,18 +1,13 @@
-# expenses/ml/spending_predictor.py
 
 import numpy as np
-from datetime import date, timedelta
+from datetime import date
 from collections import defaultdict
 from ..models import Expense
 
 
-def get_weekly_spending(user):
-    """
-    Groups the user's expenses into weeks (week 1–4 of current month)
-    and returns actual + predicted spending per week.
-    """
-   
 
+
+def get_weekly_spending(user):
     today = date.today()
     month_start = today.replace(day=1)
 
@@ -22,6 +17,7 @@ def get_weekly_spending(user):
         date__lte=today,
     ).values("date", "amount")
 
+    using_last_month = False
     if not expenses.exists():
         if today.month == 1:
             last_month_start = today.replace(year=today.year - 1, month=12, day=1)
@@ -33,31 +29,32 @@ def get_weekly_spending(user):
             date__gte=last_month_start,
             date__lt=month_start,
         ).values("date", "amount")
-
         using_last_month = True
-    else:
-        using_last_month = False
 
+    # Group into weeks
     weekly_totals = defaultdict(float)
     for expense in expenses:
         day = expense["date"].day
-        week_number = (day - 1) // 7 + 1  
+        week_number = (day - 1) // 7 + 1
         weekly_totals[week_number] += float(expense["amount"])
+
     if not weekly_totals:
         return {
             "actual": [],
             "predicted": [],
             "trend": "stable",
+            "summary": None,
             "message": "No expenses found. Add some expenses to see your trend.",
         }
+
     current_week = (today.day - 1) // 7 + 1 if not using_last_month else 4
+    days_passed = today.day if not using_last_month else 30
+    total_spent = sum(weekly_totals.values())
+    daily_average = total_spent / max(days_passed, 1)
+    projected_total = round(daily_average * 30, 2)
 
-    actual_weeks  = sorted(weekly_totals.keys())
+    actual_weeks  = sorted(weekly_totals.keys())  # ← only built once, no duplicate loop
     actual_totals = [weekly_totals[w] for w in actual_weeks]
-
-    for week in range(1, current_week + 1):
-        actual_weeks.append(week)
-        actual_totals.append(weekly_totals.get(week, 0.0))
 
     result = {
         "actual": [
@@ -66,11 +63,38 @@ def get_weekly_spending(user):
         ],
         "predicted": [],
         "trend": "stable",
+        "summary": {
+            "spent_so_far": round(total_spent, 2),
+            "daily_average": round(daily_average, 2),
+            "projected_total": projected_total,
+            "days_passed": days_passed,
+            "days_remaining": 30 - days_passed,
+        },
         "message": "Showing last month's data — add expenses this month to see current predictions." if using_last_month else "",
     }
 
+    if using_last_month:
+        return result
+
     if len(actual_weeks) < 2:
-        result["message"] = "Keep adding expenses — predictions appear after 2 weeks of data."
+        days_remaining = 30 - days_passed
+        remaining_projected = round(daily_average * days_remaining, 2)
+
+        future_weeks = list(range(current_week + 1, 5))
+        per_week_amount = round(remaining_projected / max(len(future_weeks), 1), 2)
+
+        for week in range(current_week + 1, 5):
+          result["predicted"].append({
+            "week": f"Week {week}",
+            "amount": per_week_amount,
+          })
+
+        result["trend"] = "stable"
+        result["message"] = (
+            f"You've spent ${total_spent:,.2f} in {days_passed} days "
+            f"(~${daily_average:,.2f}/day). "
+            f"Projected monthly total: ~${projected_total:,.2f}."
+        )
         return result
 
     x = np.array(actual_weeks, dtype=float)
@@ -82,36 +106,33 @@ def get_weekly_spending(user):
         predicted_amount = slope * week + intercept
         predicted.append({
             "week": f"Week {week}",
-            "amount": round(max(predicted_amount, 0), 2), 
+            "amount": round(max(predicted_amount, 0), 2),
         })
-
-
     result["predicted"] = predicted
 
-    if actual_totals and predicted:
-        last_actual = actual_totals[-1]
-        next_predicted = predicted[0]["amount"]  
+    if predicted:
+        last_actual   = actual_totals[-1]
+        next_pred     = predicted[0]["amount"]
+        pct_change    = ((next_pred - last_actual) / last_actual * 100) if last_actual > 0 else 0
+        abs_pct       = round(abs(pct_change))
 
-        if last_actual > 0:
-            pct_change = ((next_predicted - last_actual) / last_actual) * 100
-        else:
-            pct_change = 100.0 if next_predicted > 0 else 0.0
-
-        abs_pct = round(abs(pct_change))
-        
-        if next_predicted < 50.0:
-            result["trend"] = "stable"
-            result["message"] = "Your spending is holding steady at a very low and controlled amount. Excellent job!"
-        
+        if next_pred < 50:
+            result["trend"]   = "stable"
+            result["message"] = "Your spending is very low and controlled. Excellent job!"
         elif pct_change > 5:
-            result["trend"] = "increasing"
-            result["message"] = f"Heads up! You are **on track to spend {abs_pct}% more** next week compared to this week. Consider cutting back on non-essentials."
-        
+            result["trend"]   = "increasing"
+            result["message"] = f"Heads up! You're on track to spend {abs_pct}% more next week. Consider cutting back on non-essentials."
         elif pct_change < -5:
-            result["trend"] = "decreasing"
-            result["message"] = f"Great job! Your spending is **on track to drop by {abs_pct}%** next week. Keep it up!"
-        
+            result["trend"]   = "decreasing"
+            result["message"] = f"Great job! Your spending is on track to drop by {abs_pct}% next week. Keep it up!"
         else:
-            result["trend"] = "stable"
-            result["message"] = "Your spending is holding steady. Next week is **expected to match** your current weekly average."
+            result["trend"]   = "stable"
+            result["message"] = "Your spending is holding steady — next week should match your current average."
+    else:
+        result["message"] = (
+            f"You've spent ${total_spent:,.2f} in {days_passed} days "
+            f"(~${daily_average:,.2f}/day). "
+            f"Projected monthly total: ~${projected_total:,.2f}."
+        )
+
     return result

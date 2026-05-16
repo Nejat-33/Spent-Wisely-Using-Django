@@ -56,8 +56,8 @@ def dashboard(request):
         "current_month" : now.strftime('%B %Y'),
         "remaining_amount" : remaining_amount,
         "budget_amount": budget_amount,
-     # #    "highest_category_name" : highest_category['category__name'],
-     #    "highest_category_total_sum" : highest_category['total_sum'],
+        "highest_category_name" : highest_category['category__name'],
+        "highest_category_total_sum" : highest_category['total_sum'],
         "is_over_budget" : total_sppent > budget_amount and budget_amount > 0
     }
 

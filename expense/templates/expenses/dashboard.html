@@ -86,46 +86,63 @@
     </div>
 
    <div class="bg-white/60 backdrop-blur-md border border-slate-100 rounded-2xl p-6 shadow-sm">
-    
-    <div class="flex items-center justify-between mb-4">
+
+   <div class="p-8 rounded-[2.5rem] mb-10 bg-white border border-slate-100 shadow-xl shadow-slate-200/40">
+    <div class="flex justify-between items-center mb-6">
         <div>
-            <h3 class="text-lg font-bold text-slate-800 tracking-tight">Weekly Spending Trend</h3>
-            <p class="text-xs text-slate-400">Actual vs predicted spend this month.</p>
+            <h4 class="text-lg font-black text-slate-900 tracking-tight">Weekly Spending Trend</h4>
+            <p class="text-slate-400 text-xs font-bold mt-0.5">Actual vs predicted spend this month.</p>
         </div>
-        <span id="trend-badge" class="px-3 py-1 rounded-full text-xs font-bold transition-all duration-300" style="display: none;"></span>
+        <span id="trend-badge" class="text-xs font-black px-3 py-1.5 rounded-xl"></span>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-        
+
+        <!-- Chart -->
         <div class="lg:col-span-2 relative h-64 w-full">
             <canvas id="weeklyTrendChart"></canvas>
         </div>
 
+        <!-- AI Sidebar -->
         <div class="lg:col-span-1 flex flex-col justify-between h-full bg-slate-50/80 border border-slate-200/60 rounded-xl p-5 relative overflow-hidden group hover:border-sky-300 transition-all duration-300">
-            
             <div class="absolute -top-10 -right-10 w-24 h-24 bg-sky-400/10 rounded-full blur-xl pointer-events-none"></div>
-            
+
             <div>
                 <div class="flex items-center gap-2 mb-3">
                     <span class="relative flex h-2 w-2">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
                     </span>
-                    <span class="text-[11px] font-bold text-sky-600 tracking-wider uppercase">NovaCore AI Forecast</span>
+                    <span class="text-[11px] font-bold text-sky-600 tracking-wider uppercase">SpentWise AI Forecast</span>
                 </div>
 
                 <p id="trend-message" class="text-sm text-slate-600 leading-relaxed min-h-[60px]">
                     Analyzing your spending habits...
                 </p>
+
+                <!-- Summary stats — hidden until data loads -->
+                <div id="trend-summary" class="hidden mt-4 grid grid-cols-1 gap-3">
+                    <div class="bg-white border border-slate-100 rounded-lg px-3 py-2">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Spent So Far</p>
+                        <p id="summary-spent" class="text-sm font-black text-slate-800 mt-0.5"></p>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-lg px-3 py-2">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Average</p>
+                        <p id="summary-daily" class="text-sm font-black text-slate-800 mt-0.5"></p>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-lg px-3 py-2">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Projected Total</p>
+                        <p id="summary-projected" class="text-sm font-black text-blue-600 mt-0.5"></p>
+                    </div>
+                </div>
             </div>
 
             <div class="mt-4 pt-3 border-t border-slate-100">
-                <small id="suggestion-hint" class="block text-slate-400 text-[11px] leading-tight">
+                <small class="block text-slate-400 text-[11px] leading-tight">
                     💡 Smart projections scale dynamically based on your weekly transactional velocity.
                 </small>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -274,62 +291,62 @@
 <script>
 async function loadWeeklyTrend() {
     try {
-        const res = await fetch("{% url 'weekly_prediction' %}?t=" + new Date().getTime());
-const data = await res.json();
+        const res  = await fetch("{% url 'weekly_prediction' %}");
+        const data = await res.json();
 
         const badge   = document.getElementById("trend-badge");
         const message = document.getElementById("trend-message");
         const canvas  = document.getElementById("weeklyTrendChart");
+        const summary = document.getElementById("trend-summary");
 
-        message.textContent = data.message;
-
-        if (data.message) {
-    // Converts **text** into <strong>text</strong> dynamically
-    message.innerHTML = data.message.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-800">$1</strong>');
-} else {
-    message.textContent = "";
-}   if (!data.actual || data.actual.length < 2) {
-            canvas.parentElement.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full">
-                    <p class="text-slate-400 text-sm font-medium">${data.message}</p>
-                </div>`;
+        // No data at all
+        if (!data.actual || data.actual.length === 0) {
+            message.textContent = data.message;
             badge.style.display = "none";
+            canvas.parentElement.innerHTML =
+                `<p class="text-slate-400 text-center text-sm font-bold mt-20">${data.message}</p>`;
             return;
         }
 
+        // Trend badge
         const badgeMap = {
             increasing: "background:#fee2e2; color:#dc2626;",
             decreasing: "background:#dcfce7; color:#16a34a;",
             stable:     "background:#eff6ff; color:#3b82f6;",
         };
         badge.style.cssText = badgeMap[data.trend] || badgeMap.stable;
-        badge.textContent = data.trend.charAt(0).toUpperCase() + data.trend.slice(1);
+        badge.textContent   = data.trend.charAt(0).toUpperCase() + data.trend.slice(1);
 
+        // Message
+        message.textContent = data.message;
+
+        // Summary stats
+        if (data.summary) {
+            summary.classList.remove("hidden");
+            document.getElementById("summary-spent").textContent =
+                "$" + data.summary.spent_so_far.toLocaleString();
+            document.getElementById("summary-daily").textContent =
+                "$" + data.summary.daily_average.toLocaleString() + "/day";
+            document.getElementById("summary-projected").textContent =
+                "~$" + data.summary.projected_total.toLocaleString();
+        }
+
+        // Build chart datasets
         const actualLabels    = data.actual.map(w => w.week);
         const predictedLabels = data.predicted.map(w => w.week);
         const allLabels       = [...new Set([...actualLabels, ...predictedLabels])];
-        allLabels.sort((a, b) => {
-    const numA = parseInt(a.replace(/^\D+/g, '')) || 0;
-    const numB = parseInt(b.replace(/^\D+/g, '')) || 0;
-    return numA - numB;
-});
 
         const actualAmounts = allLabels.map(label => {
             const found = data.actual.find(w => w.week === label);
-            return found ? parseFloat(found.amount) : null;
+            return found ? found.amount : null;
         });
 
         const predictedAmounts = allLabels.map(label => {
             const found = data.predicted.find(w => w.week === label);
-            return found ? parseFloat(found.amount) : null;
+            return found ? found.amount : null;
         });
 
         const ctx = canvas.getContext("2d");
-
-        const existingChart = Chart.getChart(canvas);
-        if (existingChart) {
-            existingChart.destroy();
-        }
         new Chart(ctx, {
             type: "bar",
             data: {
@@ -338,14 +355,14 @@ const data = await res.json();
                     {
                         label: "Actual",
                         data: actualAmounts,
-                        backgroundColor: "#1e293b",   
+                        backgroundColor: "#1e293b",
                         borderRadius: 10,
                         barThickness: 28,
                     },
                     {
                         label: "Predicted",
                         data: predictedAmounts,
-                        backgroundColor: "#bae6fd",
+                        backgroundColor: "#bfdbfe",
                         borderRadius: 10,
                         barThickness: 28,
                     }
@@ -382,7 +399,7 @@ const data = await res.json();
                     },
                     tooltip: {
                         callbacks: {
-                            label: ctx => ` $${ctx.parsed.y.toLocaleString()}`
+                            label: ctx => ` $${ctx.parsed.y?.toLocaleString() ?? 0}`
                         }
                     }
                 }
@@ -391,6 +408,8 @@ const data = await res.json();
 
     } catch (err) {
         console.error("Weekly trend failed:", err);
+        document.getElementById("trend-message").textContent =
+            "Could not load spending trend. Please try again.";
     }
 }
 
