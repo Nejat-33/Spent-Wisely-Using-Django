@@ -1,0 +1,299 @@
+{% extends 'expenses/base.html' %}
+{% block title %}Anomaly Detection{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+  <div class="flex items-center justify-between pb-2">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center">
+        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 tracking-tight">Anomaly Detection</h1>
+        <p class="text-xs text-slate-500 font-medium">AI-powered unusual spending alerts</p>
+      </div>
+    </div>
+    
+    <button
+      id="rescan-btn"
+      onclick="loadAnomalies()"
+      class="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 shadow-sm transition-all duration-200 font-medium"
+    >
+      <svg id="rescan-icon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>
+      </svg>
+      Rescan Data
+    </button>
+  </div>
+
+  <div id="loading-state" class="flex flex-col items-center justify-center py-20 gap-4 soft-card rounded-2xl">
+    <div class="w-9 h-9 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+    <p class="text-sm font-medium text-slate-500">Analyzing your expenses...</p>
+  </div>
+
+  <div id="error-state" class="hidden">
+    <div class="soft-card rounded-2xl p-8 text-center max-w-md mx-auto">
+      <p class="text-sm font-semibold text-red-500" id="error-message"></p>
+      <p class="text-xs text-slate-400 mt-1">Please log more transactions and try scanning your history again.</p>
+    </div>
+  </div>
+
+  <div id="main-content" class="hidden space-y-8">
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="soft-card rounded-2xl p-5">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Anomalies Found</p>
+        <p id="metric-flagged" class="text-3xl font-black text-red-500">—</p>
+        <p id="metric-total" class="text-xs font-medium text-slate-400 mt-1.5">of — entries</p>
+      </div>
+      
+      <div class="soft-card rounded-2xl p-5">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Highest Deviation</p>
+        <p id="metric-deviation" class="text-3xl font-black text-amber-500">—</p>
+        <p class="text-xs font-medium text-slate-400 mt-1.5">z-score metrics</p>
+      </div>
+      
+      <div class="soft-card rounded-2xl p-5">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Flagged Value</p>
+        <p id="metric-amount" class="text-3xl font-black text-red-500">—</p>
+        <p class="text-xs font-medium text-slate-400 mt-1.5">requires verification</p>
+      </div>
+      
+      <div class="soft-card rounded-2xl p-5">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Normal Range</p>
+        <p id="metric-normal" class="text-3xl font-black text-emerald-600">—</p>
+        <p class="text-xs font-medium text-slate-400 mt-1.5">within expected boundaries</p>
+      </div>
+    </div>
+
+    <div id="flagged-section" class="space-y-4">
+      <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Flagged Items Requiring Review</p>
+      <div id="anomalies-list" class="flex flex-col gap-4"></div>
+    </div>
+
+    <div id="all-clear" class="hidden soft-card rounded-2xl p-12 text-center max-w-lg mx-auto">
+      <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+        </svg>
+      </div>
+      <h3 class="text-slate-900 font-bold text-lg mb-1">Your Account Looks Clear!</h3>
+      <p class="text-sm text-slate-500 leading-relaxed">Our pipeline processed your active items and detected no irregular outliers across your accounts.</p>
+    </div>
+
+  </div>
+</div>
+
+<template id="anomaly-card-tpl">
+  <div class="anomaly-card soft-card rounded-2xl overflow-hidden transition-all duration-200 hover:border-slate-300" data-expanded="false">
+
+    <div class="card-header flex items-center gap-4 p-5 cursor-pointer select-none" onclick="toggleCard(this)">
+      <div class="severity-dot w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+      
+      <div class="flex-1 min-w-0">
+        <p class="card-category text-sm font-bold text-slate-900 capitalize truncate"></p>
+        <p class="card-date text-xs font-medium text-slate-400 mt-0.5"></p>
+      </div>
+      
+      <div class="flex flex-col items-end gap-1 flex-shrink-0">
+        <p class="card-amount text-sm font-bold text-slate-900"></p>
+        <span class="card-severity-tag text-[11px] font-semibold px-2 py-0.5 rounded-md"></span>
+      </div>
+      
+      <svg class="chevron w-4 h-4 text-slate-400 transition-transform duration-200 flex-shrink-0 ml-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+      </svg>
+    </div>
+
+    <div class="card-detail hidden border-t border-slate-100 bg-slate-50/50 p-5 space-y-4">
+
+      <div class="flex items-start gap-3 bg-white p-3.5 border border-slate-200/60 rounded-xl shadow-sm">
+        <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/>
+          </svg>
+        </div>
+        <p class="card-reason text-sm text-slate-600 font-medium leading-relaxed"></p>
+      </div>
+
+      <div class="bg-white border border-slate-200/60 rounded-xl p-4 shadow-sm">
+        <div class="flex justify-between text-xs font-semibold text-slate-400 mb-2">
+          <span>Usual Baseline Average</span>
+          <span>Target Transaction</span>
+        </div>
+        <div class="relative h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div class="bar-fill absolute left-0 top-0 h-full rounded-full transition-all duration-700"></div>
+        </div>
+        <div class="flex justify-between text-xs font-bold mt-2">
+          <span class="card-cat-avg text-slate-400"></span>
+          <span class="card-amount-label"></span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 px-1">
+        <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
+          </svg>
+        </div>
+        <p class="card-description text-sm text-slate-500 truncate font-medium"></p>
+      </div>
+
+      <!-- <div class="flex gap-2.5 pt-1">
+        <button class="dismiss-btn flex-1 text-xs font-semibold py-2.5 px-4 rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition-all duration-200" onclick="dismissAnomaly(this)">
+          Mark as Normal
+        </button>
+        <button class="text-xs font-semibold py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all duration-200" onclick="addNote(this)">
+          Add Context Note
+        </button>
+      </div> -->
+
+    </div>
+  </div>
+</template>
+
+<script>
+// Refactored Color Archetypes mapped precisely to clean slate styling standards
+const SEVERITY_STYLES = {
+  high:   { dot: 'bg-red-500',    tag: 'bg-red-50 border border-red-100 text-red-600',       bar: '#ef4444' },
+  medium: { dot: 'bg-amber-500',  tag: 'bg-amber-50 border border-amber-100 text-amber-600', bar: '#d97706' },
+  low:    { dot: 'bg-blue-500',   tag: 'bg-blue-50 border border-blue-100 text-blue-600',    bar: '#2563eb' },
+}
+
+async function loadAnomalies() {
+  document.getElementById('loading-state').classList.remove('hidden')
+  document.getElementById('main-content').classList.add('hidden')
+  document.getElementById('error-state').classList.add('hidden')
+
+  const icon = document.getElementById('rescan-icon')
+  icon.classList.add('animate-spin')
+
+  try {
+    const res  = await fetch('/anomalies/api/', {
+      credentials: 'same-origin',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    })
+    const data = await res.json()
+
+    if (data.error) { showError(data.error); return }
+
+    renderMetrics(data.summary)
+    renderAnomalies(data.anomalies)
+
+    document.getElementById('loading-state').classList.add('hidden')
+    document.getElementById('main-content').classList.remove('hidden')
+
+  } catch (err) {
+    showError('Could not sync analytics pipeline. Is the server online?')
+    console.error('EXACT ERROR:', err) 
+  } finally {
+    icon.classList.remove('animate-spin')
+  }
+}
+
+function renderMetrics(s) {
+  document.getElementById('metric-flagged').textContent   = s.flagged_count
+  document.getElementById('metric-total').textContent     = `of ${s.total_transactions} total items`
+  document.getElementById('metric-deviation').textContent = `${s.highest_deviation}σ`
+  document.getElementById('metric-amount').textContent    = `$${s.flagged_amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+  document.getElementById('metric-normal').textContent    = `${s.normal_pct}%`
+}
+
+function renderAnomalies(anomalies) {
+  const list      = document.getElementById('anomalies-list')
+  const allClear  = document.getElementById('all-clear')
+  const flagged   = document.getElementById('flagged-section')
+  list.innerHTML  = ''
+
+  if (anomalies.length === 0) {
+    flagged.classList.add('hidden')
+    allClear.classList.remove('hidden')
+    return
+  }
+
+  flagged.classList.remove('hidden')
+  allClear.classList.add('hidden')
+
+  const tpl = document.getElementById('anomaly-card-tpl')
+
+  anomalies.forEach(a => {
+    const sev   = SEVERITY_STYLES[a.severity] || SEVERITY_STYLES.low
+    const clone = tpl.content.cloneNode(true)
+    const card  = clone.querySelector('.anomaly-card')
+
+    card.dataset.expenseId = a.id
+
+    card.querySelector('.severity-dot').classList.add(sev.dot)
+    card.querySelector('.card-category').textContent     = a.category
+    card.querySelector('.card-date').textContent         = formatDate(a.date)
+    card.querySelector('.card-amount').textContent       = `$${a.amount.toFixed(2)}`
+    card.querySelector('.card-reason').textContent       = a.reason
+    card.querySelector('.card-description').textContent  = a.description || 'No custom notes provided.'
+    card.querySelector('.card-cat-avg').textContent      = `$${a.cat_avg.toFixed(2)} baseline`
+    card.querySelector('.card-amount-label').textContent = `$${a.amount.toFixed(2)}`
+    card.querySelector('.card-amount-label').style.color = sev.bar
+
+    const tag = card.querySelector('.card-severity-tag')
+    tag.textContent = a.severity.charAt(0).toUpperCase() + a.severity.slice(1) + ' Risk'
+    tag.className  += ' ' + sev.tag
+
+    const ratio   = Math.min((a.cat_avg / a.amount) * 95, 95)
+    const barFill = card.querySelector('.bar-fill')
+    barFill.style.width      = ratio + '%'
+    barFill.style.background = sev.bar
+
+    list.appendChild(clone)
+  })
+}
+
+function toggleCard(header) {
+  const card    = header.closest('.anomaly-card')
+  const detail  = card.querySelector('.card-detail')
+  const chevron = card.querySelector('.chevron')
+  const open    = card.dataset.expanded === 'true'
+  
+  card.dataset.expanded      = !open
+  detail.classList.toggle('hidden', open)
+  chevron.style.transform    = open ? '' : 'rotate(180deg)'
+  
+  if (!open) {
+    card.classList.add('border-slate-300', 'shadow-md')
+  } else {
+    card.classList.remove('border-slate-300', 'shadow-md')
+  }
+}
+
+
+function updateFlaggedCount(delta) {
+  const el  = document.getElementById('metric-flagged')
+  const cur = parseInt(el.textContent) + delta
+  el.textContent = cur
+  if (cur === 0) {
+    document.getElementById('flagged-section').classList.add('hidden')
+    document.getElementById('all-clear').classList.remove('hidden')
+  }
+}
+
+function showError(msg) {
+  document.getElementById('loading-state').classList.add('hidden')
+  document.getElementById('error-state').classList.remove('hidden')
+  document.getElementById('error-message').textContent = msg
+}
+
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric'
+  })
+}
+
+function getCookie(name) {
+  const val = document.cookie.split('; ').find(r => r.startsWith(name + '='))
+  return val ? val.split('=')[1] : ''
+}
+
+document.addEventListener('DOMContentLoaded', loadAnomalies)
+</script>
+{% endblock %}

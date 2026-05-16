@@ -103,7 +103,7 @@
             <canvas id="weeklyTrendChart"></canvas>
         </div>
 
-        <!-- AI Sidebar -->
+     
         <div class="lg:col-span-1 flex flex-col justify-between h-full bg-slate-50/80 border border-slate-200/60 rounded-xl p-5 relative overflow-hidden group hover:border-sky-300 transition-all duration-300">
             <div class="absolute -top-10 -right-10 w-24 h-24 bg-sky-400/10 rounded-full blur-xl pointer-events-none"></div>
 
@@ -119,8 +119,8 @@
                 <p id="trend-message" class="text-sm text-slate-600 leading-relaxed min-h-[60px]">
                     Analyzing your spending habits...
                 </p>
+                <div id="budget-alert" class="hidden mt-3 px-3 py-2.5 rounded-xl text-xs font-bold leading-relaxed"></div>
 
-                <!-- Summary stats — hidden until data loads -->
                 <div id="trend-summary" class="hidden mt-4 grid grid-cols-1 gap-3">
                     <div class="bg-white border border-slate-100 rounded-lg px-3 py-2">
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Spent So Far</p>
@@ -224,69 +224,7 @@
         </div>
     </div>
 </div>
-<!--
-{{ labels|json_script:"labels-data" }}
-{{ data|json_script:"values-data" }}
- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
- <script>
-    const rawLabels = JSON.parse(document.getElementById('labels-data').textContent);
-    const rawData = JSON.parse(document.getElementById('values-data').textContent);
-
-    if (rawLabels.length > 0) {
-        const ctx = document.getElementById('categoryChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: rawLabels,
-                datasets: [{
-                    label: 'Spent',
-                    data: rawData,
-                    backgroundColor: '#1e293b',
-                    borderRadius: 16,
-                    barThickness: 32,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { 
-                            color: '#f1f5f9' 
-                        },
-                        ticks: {
-                            font: {
-                                weight: 'bold',
-                                size: 10
-                            }
-                        }
-                    },
-                    x: { 
-                        grid: { 
-                            display: false 
-                        },
-                        ticks: {
-                            font: {
-                                weight: 'bold',
-                                size: 10
-                            }
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
-    } else {
-        document.getElementById('categoryChart').parentElement.innerHTML = 
-            '<p class="text-slate-400 text-center text-sm font-bold mt-20">Add an expense to see your spending insights chart!</p>';
-    }
-</script> -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 async function loadWeeklyTrend() {
@@ -299,7 +237,6 @@ async function loadWeeklyTrend() {
         const canvas  = document.getElementById("weeklyTrendChart");
         const summary = document.getElementById("trend-summary");
 
-        // No data at all
         if (!data.actual || data.actual.length === 0) {
             message.textContent = data.message;
             badge.style.display = "none";
@@ -308,7 +245,6 @@ async function loadWeeklyTrend() {
             return;
         }
 
-        // Trend badge
         const badgeMap = {
             increasing: "background:#fee2e2; color:#dc2626;",
             decreasing: "background:#dcfce7; color:#16a34a;",
@@ -317,10 +253,8 @@ async function loadWeeklyTrend() {
         badge.style.cssText = badgeMap[data.trend] || badgeMap.stable;
         badge.textContent   = data.trend.charAt(0).toUpperCase() + data.trend.slice(1);
 
-        // Message
         message.textContent = data.message;
 
-        // Summary stats
         if (data.summary) {
             summary.classList.remove("hidden");
             document.getElementById("summary-spent").textContent =
@@ -330,8 +264,23 @@ async function loadWeeklyTrend() {
             document.getElementById("summary-projected").textContent =
                 "~$" + data.summary.projected_total.toLocaleString();
         }
+const budgetAlert = document.getElementById("budget-alert");
+console.log("data ", data);
 
-        // Build chart datasets
+if (data.budget_message) {
+    budgetAlert.classList.remove("hidden");
+    budgetAlert.textContent = data.budget_message;
+
+    const alertStyles = {
+        exceeded: "background:#fee2e2; color:#dc2626;",
+        at_risk:  "background:#fff7ed; color:#ea580c;",
+        warning:  "background:#fefce8; color:#ca8a04;",
+        safe:     "background:#f0fdf4; color:#16a34a;",
+        null:     "background:#f8fafc; color:#94a3b8;",
+    };
+    budgetAlert.style.cssText = alertStyles[data.budget_status] || alertStyles[null];
+}
+
         const actualLabels    = data.actual.map(w => w.week);
         const predictedLabels = data.predicted.map(w => w.week);
         const allLabels       = [...new Set([...actualLabels, ...predictedLabels])];

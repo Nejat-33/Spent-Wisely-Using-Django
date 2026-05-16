@@ -12,6 +12,8 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from .ml.pridictor import CategoryPredictor
 from .ml.spending_predictor import get_weekly_spending
+from .ml.anomaly import detect_anomalies, train_model
+from django.views.decorators.http import require_http_methods
 
 
 @login_required
@@ -274,12 +276,65 @@ def predict_category(request):
     
 
 
+
 @login_required
 def weekly_spending_prediction(request):
-    if request.user.is_anonymous:
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        request.user = User.objects.first() 
-        
-    data = get_weekly_spending(request.user)
-    return JsonResponse(data, safe=False)
+    budget = Budget.objects.filter(user=request.user).first()
+    budget_amount = float(budget.amount) if budget else 0
+    
+    data = get_weekly_spending(request.user, budget_amount)
+    return JsonResponse(data)
+
+
+
+@login_required
+@require_http_methods(['GET'])
+def anomalies_view(request):
+    """
+    GET /api/anomalies/
+    Returns flagged expenses + summary stats for the current user.
+    """
+    expenses = Expense.objects.filter(
+        user=request.user
+    ).order_by('date')
+
+    result = detect_anomalies(request.user.id, expenses)
+    return JsonResponse(result)
+
+
+@login_required
+@require_http_methods(['POST'])
+def retrain_model_view(request):
+    """
+    POST /api/anomalies/retrain/
+    Retrains the model from scratch — call this when user adds many new expenses.
+    """
+    expenses = Expense.objects.filter(user=request.user).order_by('date')
+    pipeline, err = train_model(request.user.id, expenses)
+
+    if err:
+        return JsonResponse({'success': False, 'error': err}, status=400)
+
+    return JsonResponse({'success': True, 'message': 'Model retrained successfully'})
+
+
+# @login_required
+# @require_http_methods(['POST'])
+# def dismiss_anomaly_view(request, expense_id):
+#     """
+#     POST /api/anomalies/<id>/dismiss/
+#     Mark a specific expense as reviewed (not truly anomalous).
+#     Stores dismissed IDs in the user's session so they don't reappear.
+#     """
+#     dismissed = request.session.get('dismissed_anomalies', [])
+
+#     if expense_id not in dismissed:
+#         dismissed.append(expense_id)
+#         request.session['dismissed_anomalies'] = dismissed
+#         request.session.modified = True
+
+#     return JsonResponse({'success': True, 'dismissed_id': expense_id})
+
+@login_required
+def anomalies_page(request):
+    return render(request, 'expenses/anomaly.html')
