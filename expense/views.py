@@ -318,23 +318,6 @@ def retrain_model_view(request):
     return JsonResponse({'success': True, 'message': 'Model retrained successfully'})
 
 
-# @login_required
-# @require_http_methods(['POST'])
-# def dismiss_anomaly_view(request, expense_id):
-#     """
-#     POST /api/anomalies/<id>/dismiss/
-#     Mark a specific expense as reviewed (not truly anomalous).
-#     Stores dismissed IDs in the user's session so they don't reappear.
-#     """
-#     dismissed = request.session.get('dismissed_anomalies', [])
-
-#     if expense_id not in dismissed:
-#         dismissed.append(expense_id)
-#         request.session['dismissed_anomalies'] = dismissed
-#         request.session.modified = True
-
-#     return JsonResponse({'success': True, 'dismissed_id': expense_id})
-
 @login_required
 def anomalies_page(request):
     return render(request, 'expenses/anomaly.html')

@@ -142,21 +142,13 @@
         <p class="card-description text-sm text-slate-500 truncate font-medium"></p>
       </div>
 
-      <!-- <div class="flex gap-2.5 pt-1">
-        <button class="dismiss-btn flex-1 text-xs font-semibold py-2.5 px-4 rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition-all duration-200" onclick="dismissAnomaly(this)">
-          Mark as Normal
-        </button>
-        <button class="text-xs font-semibold py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all duration-200" onclick="addNote(this)">
-          Add Context Note
-        </button>
-      </div> -->
+      
 
     </div>
   </div>
 </template>
 
 <script>
-// Refactored Color Archetypes mapped precisely to clean slate styling standards
 const SEVERITY_STYLES = {
   high:   { dot: 'bg-red-500',    tag: 'bg-red-50 border border-red-100 text-red-600',       bar: '#ef4444' },
   medium: { dot: 'bg-amber-500',  tag: 'bg-amber-50 border border-amber-100 text-amber-600', bar: '#d97706' },

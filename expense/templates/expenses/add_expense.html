@@ -193,23 +193,19 @@
             const cleanSuggestion = suggestedName.trim().toLowerCase();
             let foundMatch = false;
 
-            // Loop through every single option inside the dropdown
             for (let i = 0; i < categorySelect.options.length; i++) {
                 const option = categorySelect.options[i];
                 const optionText = option.text.trim().toLowerCase();
                 const optionValue = option.value.trim().toLowerCase();
 
-                // Check if the suggestion matches the visible text OR the underlying value
                 if (optionText === cleanSuggestion || optionValue === cleanSuggestion) {
-                    categorySelect.selectedIndex = i; // Select by its position index!
+                    categorySelect.selectedIndex = i; 
                     foundMatch = true;
                     break;
                 }
             }
 
-            // Hide the badge if we successfully made a choice
             if (foundMatch) {
-                // Force the browser to recognize the UI change
                 categorySelect.dispatchEvent(new Event('change'));
                 
                 suggestionBadge.style.display = "none";

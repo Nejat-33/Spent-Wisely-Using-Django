@@ -19,11 +19,7 @@
                         {{ field }}
                     </div>
                     
-                    <!-- {% if field.help_text %}
-                        <small class="block text-slate-400 text-[11px] leading-relaxed mt-1.5 ml-1 max-w-sm">
-                            {{ field.help_text|safe }}
-                        </small>
-                    {% endif %} -->
+                   
 
                     {% if field.errors %}
                         <p class="text-red-500 text-xs mt-2 font-medium ml-1">
@@ -45,25 +41,23 @@
 </div>
 
 <style>
-    /* Overrides the old dark glass styling with your clean light interface theme */
     input {
         width: 100%;
-        background-color: #f8fafc !important; /* slate-50 */
-        border: 1px solid #e2e8f0 !important; /* slate-200 */
-        border-radius: 1rem !important; /* rounded-2xl */
+        background-color: #f8fafc !important; 
+        border: 1px solid #e2e8f0 !important; 
+        border-radius: 1rem !important;
         padding: 0.875rem 1rem !important;
-        color: #0f172a !important; /* slate-900 text is now clearly visible! */
+        color: #0f172a !important;
         font-size: 1rem;
         transition: all 0.2s;
     }
     input:focus {
         outline: none !important;
-        border-color: #3b82f6 !important; /* blue-500 */
+        border-color: #3b82f6 !important; 
         background-color: #ffffff !important;
         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
     }
     
-    /* Clean up Django's built-in list styles for password rules if they render as lists */
     ul.helptext, .helptext ul {
         list-style-type: none !important;
         padding-left: 0 !important;

@@ -19,6 +19,5 @@ urlpatterns = [
     path('weekly-prediction/', weekly_spending_prediction, name="weekly_prediction"),
     path('anomalies/api/', anomalies_view,      name='anomalies-api'),
     path('anomalies/retrain/', retrain_model_view,  name='anomalies-retrain'),
-    # path('anomalies/<int:expense_id>/dismiss/', dismiss_anomaly_view, name='anomaly-dismiss'),
     path('anomalies/', anomalies_page, name='anomalies'),
 ]

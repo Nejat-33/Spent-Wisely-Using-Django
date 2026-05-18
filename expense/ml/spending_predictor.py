@@ -75,7 +75,6 @@ def get_weekly_spending(user, budget_amount=0):
         "budget_message": "",
     }
 
-    # ── Build predictions ──────────────────────────────────────────
     if using_last_month:
         result["message"] = "Showing last month's data — add expenses this month to see current predictions."
 
@@ -137,7 +136,6 @@ def get_weekly_spending(user, budget_amount=0):
                 f"Projected monthly total: ~${projected_total:,.2f}."
             )
 
-    # ── Budget status — runs for ALL branches ──────────────────────
     if budget_amount > 0:
         projected = projected_total
         spent     = round(total_spent, 2)
