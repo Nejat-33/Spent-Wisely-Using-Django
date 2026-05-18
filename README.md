@@ -8,7 +8,7 @@ SpentWise is a modern, full-stack personal finance and AI-powered expense tracki
 
 * Smart Dashboard & Metrics:** Real-time financial health summaries, including flagged anomalies, total spending vs. budget caps, and dynamic percentage trackers.
 * AI Category Classification:** Automated categorization of new expense text descriptions using an embedded NLP pipeline (`TfidfVectorizer` + `LogisticRegression`).
-* Machine Learning Anomaly Detection:** Real-time scanning of transaction histories utilizing an `Isolation Forest` / statistical pipeline to flag unusual deviations ($z$-score analysis).
+* Machine Learning Anomaly Detection:** Real-time scanning of transaction histories utilizing an Isolation Forest and statistical pipeline to flag unusual deviations ($z$-score analysis).
 * Interactive Controls:** Expandable risk cards detailing anomaly breakdowns, allowing users to instantly append context notes or dismiss flags seamlessly.
 * Budget & Limits Management:** Dynamic tracking of spending ceilings across custom-configured transaction categories.
 
