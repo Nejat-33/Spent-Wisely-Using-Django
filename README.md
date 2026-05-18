@@ -2,6 +2,8 @@
 
 SpentWise is a modern, full-stack personal finance and AI-powered expense tracking application. Built with Django and styled with a clean, light-mode minimalist aesthetic, SpentWise helps users log expenses, manage category-specific budgets, and leverages Machine Learning to automatically classify spending and detect unusual transactional anomalies.
 
+# Demo <img width="1180" height="544" alt="Screenshot 2026-05-18 071230" src="https://github.com/user-attachments/assets/21d93294-da39-4c34-965d-2a3e6381154f" /> <img width="1282" height="614" alt="Screenshot 2026-05-18 071251" src="https://github.com/user-attachments/assets/bc04cdd2-2603-4a66-b61c-24b54e72f572" />
+
 # Core Features
 
 * Smart Dashboard & Metrics:** Real-time financial health summaries, including flagged anomalies, total spending vs. budget caps, and dynamic percentage trackers.
@@ -11,10 +13,7 @@ SpentWise is a modern, full-stack personal finance and AI-powered expense tracki
 * Budget & Limits Management:** Dynamic tracking of spending ceilings across custom-configured transaction categories.
 
 
-# The Tech Stack<img width="1180" height="544" alt="Screenshot 2026-05-18 071230" src="https://github.com/user-attachments/assets/21d93294-da39-4c34-965d-2a3e6381154f" />
-<img width="1282" height="614" alt="Screenshot 2026-05-18 071251" src="https://github.com/user-attachments/assets/bc04cdd2-2603-4a66-b61c-24b54e72f572" />
-
-
+# The Tech Stack 
 * Backend:** Python 3.13, Django Framework
 * Database:** PostgreSQL 
 * Machine Learning:** Scikit-learn, NumPy, Pandas
@@ -67,14 +66,14 @@ SpentWise is a modern, full-stack personal finance and AI-powered expense tracki
     source .venv/bin/activate
 
 3. Install Required Packages
- pip install django scikit-learn pandas numpy joblib
+pip install django scikit-learn pandas numpy joblib
 
 5. Run Migrations & Initialize Database
-   python manage.py makemigrations
-   python manage.py migrate
+python manage.py makemigrations
+python manage.py migrate
 
 5. Launch the Development Server
-   python manage.py runserver
+python manage.py runserver
 
 
 ## 🔒 Application Endpoints & Routing Reference
