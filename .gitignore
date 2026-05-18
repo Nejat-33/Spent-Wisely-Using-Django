@@ -2,3 +2,8 @@
 .env
 __pycache__/
 expense/ml/models/*.pkl
+*.pkl
+*.h5
+*.pt
+*.onnx
+*.pyc
